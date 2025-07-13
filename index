@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>AR DONA'm MÓN</title>
+  <meta charset="utf-8">
+  <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
+  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+
+  <script>
+    AFRAME.registerComponent('logo-click-handler', {
+      init: function () {
+        this.el.addEventListener('click', function () {
+          document.querySelector('#logoContainer').emit('click');
+
+          setTimeout(function () {
+            const mujerModel = document.querySelector('#mujerModel');
+            mujerModel.emit('makeVisible');
+
+            setTimeout(() => {
+              mujerModel.emit('showMujer');
+              document.querySelector('#textoCarmen').emit('showMujer');
+              document.querySelector('#bioCarmen').emit('showMujer');
+
+              const fondo = document.getElementById('musicaFondo');
+              const voz = document.getElementById('audioCarmenAsset');
+
+              // Bajar volumen de fondo al reproducir voz
+              if (voz && fondo) {
+                fondo.volume = 0.01;
+                voz.volume = 1.0;
+                voz.play().catch(e => console.warn("Error al reproducir audio:", e));
+                voz.onended = () => { fondo.volume = 0.02; };
+              }
+            }, 100);
+          }, 600);
+        });
+      }
+    });
+
+    AFRAME.registerComponent('mujer-click-handler', {
+      init: function () {
+        const panel = document.querySelector('#infoPanel');
+        this.el.addEventListener('click', function () {
+          const visible = panel.getAttribute('visible');
+          panel.setAttribute('visible', !visible);
+        });
+      }
+    });
+
+    AFRAME.registerComponent('background-music', {
+      init: function () {
+        const musicaFondo = document.getElementById('musicaFondo');
+        if (!musicaFondo) return;
+
+        musicaFondo.volume = 0.02;
+
+        const tryPlay = () => {
+          musicaFondo.play()
+            .then(() => {
+              document.body.removeEventListener('click', tryPlay);
+            })
+            .catch(() => {
+              document.body.addEventListener('click', tryPlay);
+            });
+        };
+
+        this.el.addEventListener('loaded', () => {
+          setTimeout(tryPlay, 500);
+        });
+      }
+    });
+  </script>
+</head>
+<body>
+  <a-scene embedded arjs background-music>
+    <a-assets>
+      <audio id="audioCarmenAsset" src="carmen_audio.mp3" preload="auto"></audio>
+      <audio id="musicaFondo" src="musica_de_fondo_suave.mp3" preload="auto" loop></audio>
+    </a-assets>
+
+    <!-- Cámara -->
+    <a-entity id="userCam" camera look-controls position="0 1.75 0" cursor="rayOrigin: mouse"></a-entity>
+
+    <!-- Contenedor padre para mundo + lupa -->
+    <a-entity id="logoContainer" look-at="target: camera"
+              position="0 1.75 -5.5" rotation="0 90 0"
+              class="clickable" visible="true"
+              animation__click="property: scale; to: 0 0 0; startEvents: click; dur: 500"
+              animation__hide="property: visible; to: false; startEvents: click; delay: 500">
+
+      <!-- Mundo -->
+      <a-entity id="logoModel" gltf-model="mundo.glb"
+                position="0 0 0" scale="0.6 0.6 0.6" logo-click-handler
+                animation__spin="property: rotation; to: 0 360 0; dur: 10000; easing: linear; loop: true">
+      </a-entity>
+
+      <!-- Lupa -->
+      <a-entity id="lupaModel" gltf-model="lupa.glb"
+                position="-0.69968 0.30818 0.37761" rotation="0 270 0" scale="0.3 0.3 0.3" logo-click-handler>
+      </a-entity>
+    </a-entity>
+
+    <!-- Mujer -->
+    <a-entity id="mujerModel" gltf-model="mujer.glb" mujer-click-handler
+              look-at="target: camera" position="0 1.75 -8"
+              scale="0 0 0" visible="false"
+              material="transparent: true; opacity: 0"
+              animation__visible="property: visible; to: true; startEvents: makeVisible"
+              animation__show="property: scale; to: 1 1 1; startEvents: showMujer; dur: 1500"
+              animation__move="property: position; to: 0 1.75 -5.5; startEvents: showMujer; dur: 1500"
+              animation__opacity="property: components.material.material.opacity; to: 1; startEvents: showMujer; dur: 1500"
+              animation__spin="property: rotation; to: 0 360 0; dur: 17000; easing: linear; loop: true">
+    </a-entity>
+
+    <!-- Nombre -->
+    <a-text id="textoCarmen" value="Carmen Alborch" position="0 0.5 -5.5" align="center"
+            color="#5863ce" scale="1 1 1" look-at="target: camera"
+            visible="false"
+            animation__showText="property: visible; to: true; startEvents: showMujer; delay: 300">
+    </a-text>
+
+    <!-- Biografía -->
+    <a-text id="bioCarmen" value="Ministra de Cultura, escritora y catedratica de Derecho Mercantil"
+            position="0 0.25 -5.5" align="center" color="#8486ce" width="2.3"
+            visible="false" look-at="target: camera"
+            animation__showText="property: visible; to: true; startEvents: showMujer; delay: 500">
+    </a-text>
+
+    <!-- Panel informativo -->
+    <a-entity id="infoPanel" geometry="primitive: plane; height: 1; width: 2"
+              material="color: #f8d4e6; opacity: 0.8" position="0 -0.036 -3.99313"
+              visible="false">
+      <a-text value="Su compromiso con la igualdad y la cultura la llevo a dirigir el Instituto Valenciano de Arte Moderno (IVAM) entre 1988 y 1993, etapa en la que el museo se consolido como referente nacional e internacional del arte contemporaneo. Desde alli impulso una programacion abierta, critica y sensible al papel de las mujeres en la creacion artistica."
+              align="left" position="-0.8571 0.046 0.08175" color="#bc5880" width="1.8"></a-text>
+    </a-entity>
+  </a-scene>
+</body>
+</html>
