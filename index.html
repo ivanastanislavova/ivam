@@ -1,98 +1,78 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <title>AR DONA'm MÓN - SLAM con WebXR</title>
-  <meta charset="utf-8">
-  <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
-</head>
-<body>
-  <a-scene
-    webxr="optionalFeatures: hit-test;"
-    xr-mode-ui="enabled: true"
-    embedded
-    background="color: #000">
+  <head>
+    <title>AR DONA'm MÓN - SLAM WebXR</title>
+    <meta charset="utf-8">
+    <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
+  </head>
+  <body>
+    <a-scene
+      xr-mode-ui="enabled: true"
+      webxr="mode: ar; optionalFeatures: hit-test;"
+      embedded
+      background="color: #000">
 
-    <!-- Activos -->
-    <a-assets>
-      <audio id="audioCarmenAsset" src="carmen_audio.mp3" preload="auto"></audio>
-      <audio id="musicaFondo" src="musica_de_fondo_suave.mp3" preload="auto" loop></audio>
-    </a-assets>
+      <!-- Activos -->
+      <a-assets>
+        <a-asset-item id="mujerModel" src="mujer.glb"></a-asset-item>
+      </a-assets>
 
-    <!-- Cámara -->
-    <a-entity id="userCam" camera look-controls position="0 1.75 0"></a-entity>
+      <!-- Cámara -->
+      <a-entity camera look-controls></a-entity>
 
-    <!-- Modelo Mujer -->
-    <a-entity id="mujerModel" gltf-model="mujer.glb" visible="false"
-      scale="0.5 0.5 0.5"
-      animation__show="property: scale; to: 0.5 0.5 0.5; dur: 1500"
-      animation__spin="property: rotation; to: 0 360 0; dur: 17000; easing: linear; loop: true">
-    </a-entity>
+      <!-- Retículo -->
+      <a-entity id="reticle"
+        geometry="primitive: ring; radiusInner: 0.05; radiusOuter: 0.06"
+        material="color: #5f68c4"
+        rotation="-90 0 0"
+        visible="false">
+      </a-entity>
+    </a-scene>
 
-    <!-- Nombre -->
-    <a-text id="textoCarmen" value="Carmen Alborch"
-      position="0 0.5 0"
-      align="center"
-      color="#5863ce"
-      visible="false">
-    </a-text>
+    <script>
+      AFRAME.registerComponent('ar-hit-test', {
+        init: function () {
+          const sceneEl = this.el.sceneEl;
+          const renderer = sceneEl.renderer;
 
-    <!-- Biografía -->
-    <a-text id="bioCarmen"
-      value="Ministra de Cultura, escritora y catedratica de Derecho Mercantil"
-      align="center"
-      color="#8486ce"
-      width="2.3"
-      visible="false">
-    </a-text>
-  </a-scene>
+          renderer.xr.addEventListener('sessionstart', async () => {
+            const session = renderer.xr.getSession();
+            const viewerSpace = await session.requestReferenceSpace('viewer');
+            const localSpace = await session.requestReferenceSpace('local');
+            const hitTestSource = await session.requestHitTestSource({ space: viewerSpace });
 
-  <script>
-    // ACTIVAR AUDIO DE FONDO
-    const musicaFondo = document.getElementById('musicaFondo');
-    musicaFondo.volume = 0.02;
-    document.body.addEventListener('click', () => musicaFondo.play(), { once: true });
+            sceneEl.addEventListener('enter-vr', () => {
+              if (sceneEl.is('ar-mode')) {
+                this.reticle = document.getElementById('reticle');
+                this.reticle.object3D.visible = true;
+              }
+            });
 
-    // SISTEMA DE HIT-TEST PARA SLAM
-    AFRAME.registerComponent('ar-hit-test', {
-      init: function () {
-        this.el.sceneEl.renderer.xr.addEventListener('sessionstart', () => {
-          const session = this.el.sceneEl.renderer.xr.getSession();
-          const viewerSpace = session.requestReferenceSpace('viewer');
-          const localSpace = session.requestReferenceSpace('local');
-          session.requestHitTestSource({ space: viewerSpace }).then(source => {
-            this.hitTestSource = source;
+            this.el.sceneEl.addEventListener('tick', () => {
+              const frame = renderer.xr.getFrame();
+              if (!frame) return;
+              const results = frame.getHitTestResults(hitTestSource);
+              if (results.length > 0) {
+                const pose = results[0].getPose(localSpace);
+                this.reticle.object3D.position.set(pose.transform.position.x, pose.transform.position.y, pose.transform.position.z);
+                this.reticle.object3D.visible = true;
+              }
+            });
+
+            document.body.addEventListener('click', () => {
+              if (this.reticle && this.reticle.object3D.visible) {
+                const mujer = document.createElement('a-entity');
+                mujer.setAttribute('gltf-model', '#mujerModel');
+                mujer.setAttribute('scale', '0.5 0.5 0.5');
+                mujer.object3D.position.copy(this.reticle.object3D.position);
+                sceneEl.appendChild(mujer);
+              }
+            });
           });
-        });
-
-        this.reticle = document.createElement('a-entity');
-        this.reticle.setAttribute('geometry', { primitive: 'ring', radiusInner: 0.05, radiusOuter: 0.06 });
-        this.reticle.setAttribute('material', { color: '#5f68c4' });
-        this.reticle.setAttribute('rotation', '-90 0 0');
-        this.el.appendChild(this.reticle);
-      },
-
-      tick: function (time, delta) {
-        const frame = this.el.sceneEl.frame;
-        if (!frame || !this.hitTestSource) return;
-
-        const referenceSpace = this.el.sceneEl.renderer.xr.getReferenceSpace();
-        const results = frame.getHitTestResults(this.hitTestSource);
-        if (results.length > 0) {
-          const pose = results[0].getPose(referenceSpace);
-          this.reticle.object3D.position.set(pose.transform.position.x, pose.transform.position.y, pose.transform.position.z);
-          this.reticle.object3D.visible = true;
-
-          // Al tocar la pantalla, colocar el modelo en la posición del retículo
-          document.body.addEventListener('click', () => {
-            const mujer = document.getElementById('mujerModel');
-            mujer.setAttribute('visible', 'true');
-            mujer.object3D.position.copy(this.reticle.object3D.position);
-          }, { once: true });
         }
-      }
-    });
+      });
 
-    document.querySelector('a-scene').setAttribute('ar-hit-test', '');
-  </script>
-</body>
+      document.querySelector('a-scene').setAttribute('ar-hit-test', '');
+    </script>
+  </body>
 </html>
