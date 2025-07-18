@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>AR DONA'm MÓN</title>
+  <title>AR DONA'm MÓN - Pruebas de Rendimiento</title>
   <meta charset="utf-8">
   <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
   <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
 
   <script>
+    // LOGO INTERACTION: Al hacer click desaparece el mundo y aparece la mujer
     AFRAME.registerComponent('logo-click-handler', {
       init: function () {
         this.el.addEventListener('click', function () {
@@ -37,6 +38,7 @@
       }
     });
 
+    // PANEL INTERACTION: Mostrar/ocultar información
     AFRAME.registerComponent('mujer-click-handler', {
       init: function () {
         const panel = document.querySelector('#infoPanel');
@@ -47,6 +49,7 @@
       }
     });
 
+    // MÚSICA DE FONDO
     AFRAME.registerComponent('background-music', {
       init: function () {
         const musicaFondo = document.getElementById('musicaFondo');
@@ -56,12 +59,8 @@
 
         const tryPlay = () => {
           musicaFondo.play()
-            .then(() => {
-              document.body.removeEventListener('click', tryPlay);
-            })
-            .catch(() => {
-              document.body.addEventListener('click', tryPlay);
-            });
+            .then(() => document.body.removeEventListener('click', tryPlay))
+            .catch(() => document.body.addEventListener('click', tryPlay));
         };
 
         this.el.addEventListener('loaded', () => {
@@ -69,10 +68,41 @@
         });
       }
     });
+
+    // ==============================
+    // PRUEBAS DE RENDIMIENTO
+    // ==============================
+    const startTime = performance.now();
+    let frameCount = 0;
+    let fpsSum = 0;
+
+    AFRAME.registerComponent('fps-logger', {
+      tick: function (time, delta) {
+        const fps = 1000 / delta;
+        fpsSum += fps;
+        frameCount++;
+
+        if (frameCount % 60 === 0) { // Cada 60 frames (~1s)
+          console.log('FPS actual: ' + fps.toFixed(2) + ' | FPS medio: ' + (fpsSum / frameCount).toFixed(2));
+        }
+      }
+    });
+
+    // Tiempo de carga de la página
+    window.addEventListener('load', () => {
+      console.log('Página cargada en: ' + ((performance.now() - startTime) / 1000).toFixed(2) + ' s');
+    });
+
+    // Tiempo de carga del modelo
+    document.addEventListener('model-loaded', () => {
+      console.log('Modelo cargado en: ' + ((performance.now() - startTime) / 1000).toFixed(2) + ' s');
+    });
   </script>
 </head>
+<script src="//cdn.jsdelivr.net/npm/eruda"></script>
+<script>eruda.init();</script>
 <body>
-  <a-scene embedded arjs background-music>
+  <a-scene embedded arjs background-music stats fps-logger>
     <a-assets>
       <audio id="audioCarmenAsset" src="carmen_audio.mp3" preload="auto"></audio>
       <audio id="musicaFondo" src="musica_de_fondo_suave.mp3" preload="auto" loop></audio>
