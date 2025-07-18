@@ -7,6 +7,10 @@
   <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
 
   <script>
+    // ==============================
+    // COMPONENTES ORIGINALES
+    // ==============================
+
     // LOGO INTERACTION: Al hacer click desaparece el mundo y aparece la mujer
     AFRAME.registerComponent('logo-click-handler', {
       init: function () {
@@ -72,30 +76,51 @@
     // ==============================
     // PRUEBAS DE RENDIMIENTO
     // ==============================
+
     const startTime = performance.now();
     let frameCount = 0;
     let fpsSum = 0;
 
+    // Componente para log de FPS
     AFRAME.registerComponent('fps-logger', {
       tick: function (time, delta) {
         const fps = 1000 / delta;
         fpsSum += fps;
         frameCount++;
 
-        if (frameCount % 60 === 0) { // Cada 60 frames (~1s)
+        if (frameCount % 60 === 0) { // Cada ~1 segundo
           console.log('FPS actual: ' + fps.toFixed(2) + ' | FPS medio: ' + (fpsSum / frameCount).toFixed(2));
         }
       }
     });
 
-    // Tiempo de carga de la página
+    // Log de carga de página
     window.addEventListener('load', () => {
       console.log('Página cargada en: ' + ((performance.now() - startTime) / 1000).toFixed(2) + ' s');
     });
 
-    // Tiempo de carga del modelo
-    document.addEventListener('model-loaded', () => {
-      console.log('Modelo cargado en: ' + ((performance.now() - startTime) / 1000).toFixed(2) + ' s');
+    // Log de carga de modelos
+    window.addEventListener('DOMContentLoaded', () => {
+      document.querySelector('#logoModel').addEventListener('model-loaded', () => {
+        console.log('Modelo LOGO (mundo) cargado en: ' + ((performance.now() - startTime) / 1000).toFixed(2) + ' s');
+      });
+
+      document.querySelector('#lupaModel').addEventListener('model-loaded', () => {
+        console.log('Modelo LUPA cargado en: ' + ((performance.now() - startTime) / 1000).toFixed(2) + ' s');
+      });
+
+      document.querySelector('#mujerModel').addEventListener('model-loaded', () => {
+        console.log('Modelo MUJER cargado en: ' + ((performance.now() - startTime) / 1000).toFixed(2) + ' s');
+      });
+
+      // Log cuando se muestra el panel informativo
+      const panel = document.querySelector('#infoPanel');
+      const observer = new MutationObserver(() => {
+        if (panel.getAttribute('visible') === 'true') {
+          console.log('Panel informativo VISIBLE en: ' + ((performance.now() - startTime) / 1000).toFixed(2) + ' s');
+        }
+      });
+      observer.observe(panel, { attributes: true, attributeFilter: ['visible'] });
     });
   </script>
 </head>
