@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
   <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-
+  <script src="https://unpkg.com/aframe-troika-text/dist/aframe-troika-text.min.js"></script>
   <script>
     // ==============================
     // COMPONENTES ORIGINALES
@@ -182,12 +182,20 @@
     </a-text>
 
     <!-- Panel informativo -->
-    <a-entity id="infoPanel" geometry="primitive: plane; height: 1; width: 2"
-              material="color: #f8d4e6; opacity: 0.8" position="0 -0.036 -3.99313"
-              visible="false">
-      <a-text value="Su compromiso con la igualdad y la cultura la llevo a dirigir el Instituto Valenciano de Arte Moderno (IVAM) entre 1988 y 1993, etapa en la que el museo se consolido como referente nacional e internacional del arte contemporaneo. Desde alli impulso una programacion abierta, critica y sensible al papel de las mujeres en la creacion artistica."
-              align="left" position="-0.8571 0.046 0.08175" color="#bc5880" width="1.8"></a-text>
+    <a-entity id="infoPanel"
+        geometry="primitive: plane; height: 1; width: 2"
+        material="color: #f8d4e6; opacity: 0.8"
+        position="0 -0.036 -3.99313"
+        visible="false">
+        <a-entity troika-text="value: Su compromiso con la igualdad y la cultura la llevó a dirigir el Instituto Valenciano de Arte Moderno (IVAM) entre 1988 y 1993, etapa en la que el museo se consolidó como referente nacional e internacional del arte contemporáneo. Desde allí impulsó una programación abierta, crítica y sensible al papel de las mujeres en la creación artística.; 
+        font: ./fonts/Roboto-Regular.ttf; 
+        color: #bc5880; 
+        fontSize: 0.09; 
+        maxWidth: 1.8; 
+        align: left"
+        position="0 0.060 0.136"></a-entity>
     </a-entity>
+</a-entity>
   </a-scene>
 </body>
 </html>
